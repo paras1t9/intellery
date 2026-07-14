@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: intellery-postgres
+
+    environment:
+      POSTGRES_USER: intellery
+      POSTGRES_PASSWORD: intellery
+      POSTGRES_DB: intellery
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
