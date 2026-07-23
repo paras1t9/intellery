@@ -21,3 +21,33 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
+
+enum EventRole {
+  ADMIN
+  CONTRIBUTOR
+  VIEWER
+}
+
+model Event {
+  eventId    String        @id @default(uuid())
+  name       String
+  iconURL    String?
+  eventCode  String        @unique
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  members    EventMember[]
+}
+
+model EventMember {
+  userId     String
+  eventId    String
+  role       EventRole
+  joinedAt   DateTime      @default(now())
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event       Event        @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+
+  @@id([userId, eventId])
+  @@index([eventId])
+}

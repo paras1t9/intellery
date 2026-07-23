@@ -1,9 +1,11 @@
 import { AuthenticatedUser } from "./auth.ts";
 
 declare global{
-  namespace express{
+  namespace Express{
     interface Request{
       user : AuthenticatedUser;
     }
   }
 }
+
+export{};

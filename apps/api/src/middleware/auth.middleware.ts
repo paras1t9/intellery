@@ -26,5 +26,11 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     "Unauthorized"
 );
   }
-  req.user = user;
+  req.user = {
+    id : user.id,
+    displayName : user.displayName,
+    email : user.email,
+    profilePicture : user.profilePicture
+  };
+  next()
 }
