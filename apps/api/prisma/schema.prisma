@@ -18,6 +18,8 @@ model User {
   email          String   @unique
   passwordHash   String
   profilePicture String?
+  uploads        Upload[]
+  memberships    EventMember[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -35,6 +37,8 @@ model Event {
   eventCode  String        @unique
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
+  uploads    Upload[]
+  photos     Photo[]
 
   members    EventMember[]
 }
@@ -50,4 +54,124 @@ model EventMember {
 
   @@id([userId, eventId])
   @@index([eventId])
+}
+
+model Photo {
+  id           String   @id @default(uuid())
+
+  eventId      String
+  uploaderId   String
+  uploadId     String
+
+  originalName String
+  storageKey   String
+  mimeType     String
+  size         Int
+  upload       Upload   @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  event         Event   @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  uploader      User    @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  detectedFaces DetectedFace[]
+
+  @@index([uploadId])
+  @@index([eventId])
+  @@index([uploaderId])
+}
+
+model DetectedFace {
+  id             String   @id @default(uuid())
+
+  photoId        String
+
+  boundingBoxX   Float
+  boundingBoxY   Float
+  boundingBoxW   Float
+  boundingBoxH   Float
+
+  confidence     Float
+
+  createdAt      DateTime @default(now())
+
+  photo          Photo            @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  embedding      FaceEmbedding?
+
+  @@index([photoId])
+}
+model FaceEmbedding {
+  id               String   @id @default(uuid())
+
+  detectedFaceId   String   @unique
+
+  vectorId         String   @unique
+  modelName        String
+  embeddingVersion Int
+
+  createdAt        DateTime @default(now())
+
+  detectedFace     DetectedFace @relation(fields: [detectedFaceId], references: [id], onDelete: Cascade)
+}
+enum UploadStatus {
+  PENDING
+  UPLOADING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Upload {
+  id           String       @id @default(uuid())
+
+  eventId      String
+  uploaderId   String
+
+  status       UploadStatus @default(PENDING)
+
+  totalFiles   Int
+  uploadedFiles Int          @default(0)
+  failedFiles  Int           @default(0)
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  event         Event        @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  uploader      User         @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  photos        Photo[]
+
+  @@index([eventId])
+  @@index([uploaderId])
+}
+
+model PhotoEmbedding {
+  id               String   @id @default(uuid())
+
+  photoId          String   @unique
+
+  vectorId         String   @unique
+
+  modelName        String
+
+  embeddingVersion Int
+
+  createdAt        DateTime @default(now())
+
+  photo            Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+}
+
+model PhotoAnnotation {
+  id        String   @id @default(uuid())
+
+  photoId   String
+
+  caption   String
+
+  createdAt DateTime @default(now())
+
+  photo      Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@index([photoId])
 }
