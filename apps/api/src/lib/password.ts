@@ -5,5 +5,5 @@ export async function hashPassword(password : string) : Promise<string>{
 }
 
 export async function verifyPassword(hashedPassword : string, password : string): Promise<boolean>{
-  return argon2.verify(hashedPassword, password);
+  return argon2.verify(password, hashedPassword);
 }

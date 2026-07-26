@@ -24,5 +24,11 @@ export const updateEventSchema = createEventSchema
   }
 );
 
+export const joinEventSchema = z.object({
+  eventCode: z.string().trim().toUpperCase().length(6).regex(/^[A-Z0-9]+$/, "Invalid Event Code")
+})
+
+
 export type CreateEventDto = z.infer<typeof createEventSchema>;
 export type UpdateEventDto = z.infer<typeof updateEventSchema>;
+export type JoinEventDto = z.infer<typeof joinEventSchema>;

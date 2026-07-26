@@ -3,6 +3,8 @@ import { RegisterUserInput, LoginUserInput } from "../schemas/auth.schema.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { generateToken } from "../lib/jwt.js";
 import { User } from "../../generated/prisma/client.js";
+import { AppError } from "../errors/AppError.js";
+import { StatusCodes } from "http-status-codes";
 
 function toAuthResponse(user: User){
   const token = generateToken(user.id);
@@ -25,7 +27,7 @@ export async function registerUser(input: RegisterUserInput) {
   });
 
   if (existingUser) {
-    throw new Error("Email already exists");
+    throw new AppError(StatusCodes.CONFLICT,"Email already exists");
   }
   const hashedPassword = await hashPassword(input.password);
   const user = await prisma.user.create({
@@ -47,12 +49,12 @@ export async function loginUser(input:LoginUserInput){
   });
 
   if (!existingUser) {
-    throw new Error("Invalid email or password");
+    throw new AppError(StatusCodes.BAD_REQUEST, "Invalid email or password");
   }
   const isVerified = await verifyPassword(input.password, existingUser.passwordHash);
 
   if(!isVerified){
-    throw new Error("Invalid email or password");
+    throw new AppError(StatusCodes.BAD_REQUEST,"Invalid email or password");
   }
   
   return toAuthResponse(existingUser);
