@@ -6,7 +6,7 @@ import { Prisma } from "../../generated/prisma/client.js";
 
 import prisma from "../lib/prisma.js";
 import { AppError } from "../errors/AppError.js";
-import { CreateEventDto, JoinEventDto } from "../schemas/event.schema.js";
+import { CreateEventDto, JoinEventDto, UpdateEventDetailsDto } from "../schemas/event.schema.js";
 
 const ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const ALPHABET_LENGTH = ALPHABET.length;
@@ -16,20 +16,35 @@ const MAX_ACCEPTABLE_BYTE =
 const MAX_EVENT_CODE_GENERATION_ATTEMPTS = 5;
 const MAX_CREATE_EVENT_RETRIES = 5;
 
-interface CreateEventResponse {
+export interface CreateEventResponse {
   eventId: string;
   name: string;
   eventCode: string;
   iconURL: string | null;
 }
-interface JoinEventResponse {
+export interface JoinEventResponse {
   eventId: string;
   name: string;
   eventCode: string;
   iconURL: string | null;
   role: EventRole;
 }
+export interface UserEventResponse {
+  eventId : string;
+  name : string;
+  iconURL: string | null;
+  role: string;
+}
 
+interface EventDetailsResponse {
+  eventId: string;
+  name: string;
+  iconURL: string | null;
+  eventCode: string;
+  role: EventRole;
+  memberCount: number;
+  photoCount: number;
+}
 export class EventService {
   private async generateUniqueEventCode(length = EVENT_CODE_LENGTH): Promise<string> {
     for (
@@ -86,7 +101,7 @@ export class EventService {
           const newEvent = await tx.event.create({
             data: {
               name: dto.name,
-              iconURL: dto.iconUrl,
+              iconURL: dto.iconURL,
               eventCode,
             },
           });
@@ -173,6 +188,156 @@ export class EventService {
 
       throw error;
     }
+  }
+
+  async getEvents(userId: string): Promise <UserEventResponse[]>{
+    const rawEvents = await prisma.eventMember.findMany({
+      where:{
+        userId
+      },
+      select:{
+        role:true,
+        event:{
+          select:{
+            eventId: true,
+            name: true,
+            iconURL: true
+          }
+        }
+      },
+      orderBy:{
+        event:{
+          createdAt: "desc"
+        }
+      }
+    })
+    const events = rawEvents.map((rawEvent) => ({
+      eventId: rawEvent.event.eventId,
+      name: rawEvent.event.name,
+      iconURL: rawEvent.event.iconURL,
+      role: rawEvent.role
+    }))
+    return events;
+  }
+
+  async deleteEvent(eventId: string, userId: string): Promise<void>{
+    const event = await prisma.event.findUnique({
+      where:{
+        eventId
+      },
+      select:{
+        eventId: true
+      }
+    })
+    if(!event){
+      throw new AppError(StatusCodes.NOT_FOUND, "Event Does not exist")
+    }
+    const adminMembership = await prisma.eventMember.findFirst({
+      where: {
+        userId,
+        eventId,
+        role: EventRole.ADMIN,
+      },
+    });
+    if(!adminMembership){
+      throw new AppError(StatusCodes.FORBIDDEN, "Not authorized to perform the function");
+    }
+    try{
+      await prisma.event.delete({
+        where:{
+          eventId
+        }
+      });
+    }
+    catch (error) {
+    if(
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ){
+        throw new AppError(StatusCodes.NOT_FOUND, "Event not found");
+      } 
+    throw error;
+    }
+  }
+  
+  async getEventDetails(
+  userId: string,
+  eventId: string
+  ): Promise<EventDetailsResponse> {
+    const rawEventDetails = await prisma.eventMember.findFirst({
+      where: {
+        userId,
+        eventId,
+      },
+      select: {
+        role: true,
+        event: {
+          select: {
+            eventId: true,
+            name: true,
+            iconURL: true,
+            eventCode: true,
+            _count: {
+              select: {
+                members: true,
+                photos: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!rawEventDetails) {
+      throw new AppError(StatusCodes.NOT_FOUND,"Event not found");
+    }
+
+    return {
+      eventId: rawEventDetails.event.eventId,
+      name: rawEventDetails.event.name,
+      iconURL: rawEventDetails.event.iconURL,
+      eventCode: rawEventDetails.event.eventCode,
+      role: rawEventDetails.role,
+      memberCount: rawEventDetails.event._count.members,
+      photoCount: rawEventDetails.event._count.photos,
+    };
+  }
+
+  async updateEvent( userId: string,eventId: string,updateData: UpdateEventDetailsDto): Promise<EventDetailsResponse>{
+    const event = await prisma.event.findUnique({
+    where: {
+      eventId,
+    },
+    });
+    if (!event) {
+      throw new AppError(StatusCodes.NOT_FOUND,"Event not found");
+    }
+    const adminMembership = await prisma.eventMember.findFirst({
+      where: {
+        userId,
+        eventId,
+        role: EventRole.ADMIN,
+      },
+    });
+    if (!adminMembership) {
+      throw new AppError(StatusCodes.UNAUTHORIZED,
+        "You are not authorized to update this event."
+      );
+    }
+    const data: Prisma.EventUpdateInput = {};
+    if (updateData.name !== undefined) {
+      data.name = updateData.name;
+    }
+    if (updateData.iconUrl !== undefined) {
+      data.iconURL = updateData.iconUrl;
+    }
+    await prisma.event.update({
+      where: {
+        eventId,
+      },
+      data,
+    });
+    return this.getEventDetails(userId, eventId);
   }
 }
 

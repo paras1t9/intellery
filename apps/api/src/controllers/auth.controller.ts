@@ -14,7 +14,7 @@ export async function register(req: Request, res: Response){
 export async function login(req: Request, res: Response){
   const userInfo = req.body as LoginUserInput;
   const user = await loginUser(userInfo);
-  res.status(StatusCodes.CREATED).json({
+  res.status(StatusCodes.OK).json({
     success: true,
     data: user
   })
