@@ -1,4 +1,5 @@
 import {z} from "zod";
+import { EventRole } from "../../generated/prisma/enums.js";
 
 const eventNameSchema = z
 .string()
@@ -11,7 +12,7 @@ const iconURLSchema = z
 .url();
 
 export const eventIdSchema = z.object({
-  eventId: z.string().uuid(),
+  eventId: z.uuid(),
 });
 
 export const createEventSchema = z.object({
@@ -46,6 +47,10 @@ export const updateEventDetailsSchema = z.object({
   message: "At least one field must be provided.",
   }
 )
+
+export const UpdateMemberRoleSchema = z.object({
+  role: z.enum(EventRole)
+})
 
 export type CreateEventDto = z.infer<typeof createEventSchema>;
 export type UpdateEventDto = z.infer<typeof updateEventSchema>;

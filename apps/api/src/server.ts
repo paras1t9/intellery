@@ -6,5 +6,4 @@ const PORT = env.PORT || 3000;
 
 app.listen(PORT, ()=>{
   console.log (`Intellery API running on PORT ${PORT}`);
-  console.log
 });

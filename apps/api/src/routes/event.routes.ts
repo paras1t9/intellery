@@ -1,5 +1,5 @@
-import { createEvent, deleteEvent, getEventDetails, getEvents, joinEvent, updateEvent } from "../controllers/event.controller.js";
-import { createEventSchema, joinEventSchema, deleteEventParamsSchema, eventDetailsParamsSchema, updateEventDetailsSchema, eventIdSchema } from "../schemas/event.schema.js";
+import { createEvent, deleteEvent, getEventDetails, getEventMembers, getUserEvents, joinEvent, updateEvent, updateMemberRole } from "../controllers/event.controller.js";
+import { createEventSchema, joinEventSchema, deleteEventParamsSchema, eventDetailsParamsSchema, updateEventDetailsSchema, eventIdSchema, UpdateMemberRoleSchema } from "../schemas/event.schema.js";
 import { validate } from "../middleware/validation.middleware.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { Router } from "express";
@@ -22,7 +22,7 @@ router.post(
 router.get(
   "/",
   authMiddleware,
-  getEvents
+  getUserEvents
 )
 
 router.delete(
@@ -42,8 +42,22 @@ router.get(
 router.patch(
   "/:eventId",
   authMiddleware,
-  validate(eventIdSchema),
+  validate(eventIdSchema, "params"),
   validate(updateEventDetailsSchema),
   updateEvent
+)
+
+router.get(
+  "/:eventId/members",
+  authMiddleware,
+  validate(eventIdSchema, "params"),
+  getEventMembers
+)
+
+router.patch(
+  "/:eventId/members/:userId",
+  authMiddleware,
+  validate(UpdateMemberRoleSchema),
+  updateMemberRole 
 )
 export default router;

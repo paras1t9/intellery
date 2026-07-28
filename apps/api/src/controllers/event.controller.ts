@@ -3,6 +3,8 @@ import { StatusCodes } from "http-status-codes";
 
 import eventService from "../services/event.service.js";
 import { CreateEventDto, JoinEventDto, DeleteEventDto, EventDetailsDto, UpdateEventDetailsDto} from "../schemas/event.schema.js";
+import { UpdateMemberRoleDto } from "../dto/event/event.dto.js";
+import { ta } from "zod/v4/locales";
 
 export async function createEvent(req: Request, res: Response) {
   const userId = req.user.id;
@@ -27,9 +29,9 @@ export async function joinEvent(req: Request, res: Response){
   });
 }
 
-export async function getEvents(req: Request, res: Response){
+export async function getUserEvents(req: Request, res: Response){
   const userId = req.user.id;
-  const events = await eventService.getEvents(userId);
+  const events = await eventService.getUserEvents(userId);
   return res.status(StatusCodes.OK).json({
     success : true,
     data: events
@@ -41,7 +43,7 @@ export async function deleteEvent(req: Request, res: Response) {
   const dto = req.params as DeleteEventDto
   const eventId = dto.eventId;
   await eventService.deleteEvent(eventId, userId);
-  return res.status(StatusCodes.NO_CONTENT);
+  return res.status(StatusCodes.NO_CONTENT).end();
 }
 
 export async function getEventDetails(req: Request, res: Response){
@@ -67,4 +69,32 @@ export async function updateEvent(req: Request, res: Response) {
   );
 
   return res.status(200).json(updatedEvent);
+}
+
+export async function getEventMembers(req: Request, res: Response){
+  const userId = req.user.id;
+  const eventId = req.params.eventId as string;
+
+  const members = await eventService.getEventMembers(
+    userId,
+    eventId
+  );
+
+  return res.status(200).json(members);
+}
+
+export async function updateMemberRole(req: Request, res: Response){
+const actorUserId = req.user.id;
+const eventId = req.params.eventId as string;
+const targetUserId = req.params.userId as string;
+const dto = req.body as UpdateMemberRoleDto;
+
+const updatedMember = await eventService.updateMemberRole(
+  actorUserId,
+  eventId,
+  targetUserId,
+  dto
+);
+
+  return res.status(200).json(updatedMember);
 }
