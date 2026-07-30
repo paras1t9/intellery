@@ -56,7 +56,10 @@ model EventMember {
   @@id([userId, eventId])
   @@index([eventId])
 }
-
+enum StorageProvider {
+  MINIO
+  S3
+}
 model Photo {
   id String @id @default(uuid())
 
@@ -71,6 +74,7 @@ model Photo {
   embedding    PhotoEmbedding?
   annotation   PhotoAnnotation?
   upload       Upload           @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  storageProvider StorageProvider @default(MINIO)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

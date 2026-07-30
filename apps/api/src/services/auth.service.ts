@@ -1,7 +1,7 @@
-import prisma from "../lib/prisma.js";
+import prisma from "../infrastructure/prisma.js";
 import { RegisterUserInput, LoginUserInput } from "../schemas/auth.schema.js";
-import { hashPassword, verifyPassword } from "../lib/password.js";
-import { generateToken } from "../lib/jwt.js";
+import { hashPassword, verifyPassword } from "../security/password.js";
+import { generateToken } from "../security/jwt.js";
 import { User } from "../../generated/prisma/client.js";
 import { AppError } from "../errors/AppError.js";
 import { StatusCodes } from "http-status-codes";

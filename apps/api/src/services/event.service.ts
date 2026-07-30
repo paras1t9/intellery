@@ -4,7 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import { EventRole } from "../../generated/prisma/enums.js";
 import { Prisma } from "../../generated/prisma/client.js";
 
-import prisma from "../lib/prisma.js";
+import prisma from "../infrastructure/prisma.js";
 import { AppError } from "../errors/AppError.js";
 import { CreateEventDto, JoinEventDto, UpdateEventDetailsDto,  } from "../schemas/event.schema.js";
 import { CreateEventResponse, JoinEventResponse, UserEventResponse, EventDetailsResponse, EventMemberResponse, UpdateMemberRoleDto } from "../dto/event/event.dto.js";

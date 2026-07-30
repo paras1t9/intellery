@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { verifyToken } from "../lib/jwt.js";
-import prisma from "../lib/prisma.js";
+import { verifyToken } from "../security/jwt.js";
+import prisma from "../infrastructure/prisma.js";
 import { AppError } from "../errors/AppError.js";
 import { StatusCodes } from "http-status-codes";
 

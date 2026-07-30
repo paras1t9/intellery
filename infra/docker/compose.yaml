@@ -16,5 +16,44 @@ services:
 
     restart: unless-stopped
 
+  minio:
+    image: minio/minio
+    container_name: intellery-minio
+
+    command: server /data --console-address ":9001"
+
+    environment:
+      MINIO_ROOT_USER: intellery
+      MINIO_ROOT_PASSWORD: intellery123
+
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+    volumes:
+      - minio-data:/data
+
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc
+    container_name: intellery-minio-init
+
+    depends_on:
+      - minio
+
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 intellery intellery123; do
+        echo 'Waiting for MinIO...';
+        sleep 2;
+      done;
+
+      mc mb --ignore-existing local/intellery;
+
+      exit 0;
+      "
+
 volumes:
   postgres-data:
+  minio-data:
