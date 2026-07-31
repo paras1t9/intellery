@@ -1,6 +1,6 @@
 import { UploadFile } from "./UploadFile.js";
 export interface UploadFilesRequest {
   files: UploadFile[];
-  eventId: string;
+  eventId : string,
   uploadedBy: string;
 }

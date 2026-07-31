@@ -15,7 +15,7 @@ app.use(express.json());
 app.use("/health", healthRoutes);
 app.use("/auth", authRoutes);
 app.use("/events", eventRoutes);
-app.use("/uploads", uploadRoutes);
+app.use("/", uploadRoutes);
 
 app.use(errorHandler)
 

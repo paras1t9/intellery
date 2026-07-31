@@ -10,9 +10,8 @@ export class UploadController {
 
   private toUploadRequest(req: Request): UploadFilesRequest {
     const files = req.files as Express.Multer.File[];
-
     return {
-        eventId: req.body.eventId,
+        eventId: req.params.eventId as string,
         uploadedBy: req.user.id,
         files: files.map(file => ({
             filename: file.originalname,
