@@ -22,8 +22,8 @@ export class ImageProcessor {
       const b = pixels[3*i + 2];
 
       const normalizedR = (r-config.mean[0])/config.std[0];
-      const normalizedG = (r-config.mean[1])/config.std[1];
-      const normalizedB = (r-config.mean[2])/config.std[2];
+      const normalizedG = (g-config.mean[1])/config.std[1];
+      const normalizedB = (b-config.mean[2])/config.std[2];
 
       chw[i] = normalizedR;
       chw[channelSize + i] = normalizedG;

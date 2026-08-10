@@ -4,13 +4,13 @@ import prisma from "../infrastructure/prisma.js";
 import { AppError } from "../errors/AppError.js";
 import { StatusCodes } from "http-status-codes";
 
-export async function authMiddleware(req: Request, res: Response, next: NextFunction){
+export async function authMiddleware(req: Request, next: NextFunction){
   const header = req.header("Authorization") as string;
   if(!header || !header.startsWith("Bearer ")){
     throw new AppError(
-    StatusCodes.UNAUTHORIZED,
-    "Unauthorized"
-);
+      StatusCodes.UNAUTHORIZED,
+      "Unauthorized"
+    );
   }
   const token = header.slice(7);
   const tokenVerified = verifyToken(token)
@@ -22,9 +22,9 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   })
   if(!user){
     throw new AppError(
-    StatusCodes.UNAUTHORIZED,
-    "Unauthorized"
-);
+      StatusCodes.UNAUTHORIZED,
+      "Unauthorized"
+    );
   }
   req.user = {
     id : user.id,
