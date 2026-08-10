@@ -41,7 +41,8 @@ model Event {
   uploads   Upload[]
   photos    Photo[]
 
-  members EventMember[]
+  members    EventMember[]
+  identities Identity[]
 }
 
 model EventMember {
@@ -56,10 +57,19 @@ model EventMember {
   @@id([userId, eventId])
   @@index([eventId])
 }
+
 enum StorageProvider {
   MINIO
   S3
 }
+
+enum PhotoProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model Photo {
   id String @id @default(uuid())
 
@@ -67,14 +77,13 @@ model Photo {
   uploaderId String
   uploadId   String
 
-  originalName String
-  storageKey   String
-  mimeType     String
-  size         Int
-  embedding    PhotoEmbedding?
-  annotation   PhotoAnnotation?
-  upload       Upload           @relation(fields: [uploadId], references: [id], onDelete: Cascade)
-  storageProvider StorageProvider @default(MINIO)
+  originalName    String
+  storageKey      String
+  mimeType        String
+  size            Int
+  annotation      PhotoAnnotation?
+  upload          Upload           @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  storageProvider StorageProvider  @default(MINIO)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -82,11 +91,21 @@ model Photo {
   event    Event @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
   uploader User  @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
 
-  detectedFaces DetectedFace[]
+  detectedFaces    DetectedFace[]
+  processingStatus PhotoProcessingStatus @default(PENDING)
+
+  processingStartedAt   DateTime?
+  processingCompletedAt DateTime?
+
+  processingError String?
 
   @@index([uploadId])
   @@index([eventId])
   @@index([uploaderId])
+}
+
+enum EmbeddingModel {
+  ARCFACE
 }
 
 model DetectedFace {
@@ -94,6 +113,7 @@ model DetectedFace {
 
   photoId String
 
+  // Face Detection
   boundingBoxX Float
   boundingBoxY Float
   boundingBoxW Float
@@ -101,26 +121,55 @@ model DetectedFace {
 
   confidence Float
 
-  createdAt DateTime @default(now())
+  // Facial Landmarks
+  leftEyeX Float
+  leftEyeY Float
 
-  photo     Photo          @relation(fields: [photoId], references: [id], onDelete: Cascade)
-  embedding FaceEmbedding?
+  rightEyeX Float
+  rightEyeY Float
+
+  noseX Float
+  noseY Float
+
+  leftMouthX Float
+  leftMouthY Float
+
+  rightMouthX Float
+  rightMouthY Float
+
+  // Identity (assigned later)
+  identityId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  photo    Photo     @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  identity Identity? @relation(fields: [identityId], references: [id], onDelete: SetNull)
+
+  vector FaceVector?
 
   @@index([photoId])
+  @@index([identityId])
 }
 
-model FaceEmbedding {
+model FaceVector {
   id String @id @default(uuid())
 
   detectedFaceId String @unique
 
-  vectorId         String @unique
-  modelName        String
+  vector Unsupported("vector(512)")
+
+  model EmbeddingModel
+
   embeddingVersion Int
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   detectedFace DetectedFace @relation(fields: [detectedFaceId], references: [id], onDelete: Cascade)
+
+  @@index([model])
+  @@index([embeddingVersion])
 }
 
 enum UploadStatus {
@@ -155,22 +204,6 @@ model Upload {
   @@index([uploaderId])
 }
 
-model PhotoEmbedding {
-  id String @id @default(uuid())
-
-  photoId String @unique
-
-  vectorId String @unique
-
-  modelName String
-
-  embeddingVersion Int
-
-  createdAt DateTime @default(now())
-
-  photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
-}
-
 model PhotoAnnotation {
   id String @id @default(uuid())
 
@@ -183,4 +216,23 @@ model PhotoAnnotation {
   photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
 
   @@index([photoId])
+}
+
+model Identity {
+  id String @id @default(uuid())
+
+  eventId String
+
+  displayName String?
+
+  isConfirmed Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+
+  faces DetectedFace[]
+
+  @@index([eventId])
 }

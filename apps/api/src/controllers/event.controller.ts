@@ -4,7 +4,6 @@ import { StatusCodes } from "http-status-codes";
 import eventService from "../services/event.service.js";
 import { CreateEventDto, JoinEventDto, DeleteEventDto, EventDetailsDto, UpdateEventDetailsDto} from "../schemas/event.schema.js";
 import { UpdateMemberRoleDto } from "../dto/event/event.dto.js";
-import { ta } from "zod/v4/locales";
 
 export async function createEvent(req: Request, res: Response) {
   const userId = req.user.id;
