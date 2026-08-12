@@ -13,7 +13,9 @@ export class MinioStorageService implements StorageService {
     private readonly bucket: string
   ) {}
 
-  async upload(request: UploadRequest): Promise<UploadResult> {
+  async upload(
+    request: UploadRequest
+  ): Promise<UploadResult> {
     const result = await this.client.putObject(
       this.bucket,
       request.key,
@@ -27,21 +29,48 @@ export class MinioStorageService implements StorageService {
 
     return {
       key: request.key,
-      etag: result.etag
+      etag: result.etag,
     };
   }
 
   async delete(key: string): Promise<void> {
-    await this.client.removeObject(this.bucket, key);
+    await this.client.removeObject(
+      this.bucket,
+      key
+    );
   }
 
   async exists(key: string): Promise<boolean> {
     try {
-      await this.client.statObject(this.bucket, key);
+      await this.client.statObject(
+        this.bucket,
+        key
+      );
+
       return true;
     } catch {
       return false;
     }
+  }
+
+  async getObject(key: string): Promise<Buffer> {
+    const stream =
+      await this.client.getObject(
+        this.bucket,
+        key
+      );
+
+    const chunks: Buffer[] = [];
+
+    for await (const chunk of stream) {
+      chunks.push(
+        Buffer.isBuffer(chunk)
+          ? chunk
+          : Buffer.from(chunk)
+      );
+    }
+
+    return Buffer.concat(chunks);
   }
 
   async getSignedUrl(

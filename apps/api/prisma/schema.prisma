@@ -105,7 +105,7 @@ model Photo {
 }
 
 enum EmbeddingModel {
-  ARCFACE
+  W600K_R50
 }
 
 model DetectedFace {
@@ -153,20 +153,16 @@ model DetectedFace {
 }
 
 model FaceVector {
-  id String @id @default(uuid())
-
-  detectedFaceId String @unique
-
-  vector Unsupported("vector(512)")
-
-  model EmbeddingModel
-
+  id              String         @id @default(uuid())
+  detectedFaceId  String         @unique
+  vector          Unsupported("vector(512)")
+  model           EmbeddingModel
   embeddingVersion Int
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
-  detectedFace DetectedFace @relation(fields: [detectedFaceId], references: [id], onDelete: Cascade)
+  detectedFace    DetectedFace   @relation(fields: [detectedFaceId], references: [id], onDelete: Cascade)
 
   @@index([model])
   @@index([embeddingVersion])

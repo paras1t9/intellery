@@ -4,7 +4,7 @@ import prisma from "../infrastructure/prisma.js";
 import { AppError } from "../errors/AppError.js";
 import { StatusCodes } from "http-status-codes";
 
-export async function authMiddleware(req: Request, next: NextFunction){
+export async function authMiddleware(req: Request, res: Response, next: NextFunction){
   const header = req.header("Authorization") as string;
   if(!header || !header.startsWith("Bearer ")){
     throw new AppError(

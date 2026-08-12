@@ -5,12 +5,14 @@ import { UploadFilesRequest } from "../dto/upload/UploadFilesRequest.js";
 import { UploadFilesResponse } from "../dto/upload/UploadFilesResponse.js";
 import { UploadFile } from "../dto/upload/UploadFile.js";
 import { generateObjectKey } from "../utils/objectKey.js";
+import { FaceProcessingService } from "../vision/FaceProcessingService.js";
 
 export class UploadService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly storage: StorageService
-  ) {}
+  private readonly prisma: PrismaClient,
+  private readonly storage: StorageService,
+  private readonly faceProcessing: FaceProcessingService,
+) {}
 
   async upload(
     request: UploadFilesRequest
@@ -44,7 +46,7 @@ export class UploadService {
 
     const finalStatus = 
       updatedUpload.failedFiles === 0
-    ? UploadStatus.PROCESSING
+    ? UploadStatus.COMPLETED
     : UploadStatus.FAILED;
 
 
@@ -83,8 +85,6 @@ export class UploadService {
       file.filename
     );
 
-    const stream = createReadStream(file.path);
-
     await this.storage.upload({
       key: storageKey,
       stream: createReadStream(file.path),
@@ -93,12 +93,15 @@ export class UploadService {
     });
 
     try {
-      await this.createPhoto(
+      const photo = await this.createPhoto(
         uploadId,
         eventId,
         uploaderId,
         file,
         storageKey
+      );
+      await this.faceProcessing.process(
+        photo.id,
       );
     } catch (error) {
       try {
