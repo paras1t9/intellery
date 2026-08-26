@@ -6,13 +6,14 @@ import { UploadFilesResponse } from "../dto/upload/UploadFilesResponse.js";
 import { UploadFile } from "../dto/upload/UploadFile.js";
 import { generateObjectKey } from "../utils/objectKey.js";
 import { FaceProcessingService } from "../vision/FaceProcessingService.js";
+import fs from "node:fs";
 
 export class UploadService {
   constructor(
-  private readonly prisma: PrismaClient,
-  private readonly storage: StorageService,
-  private readonly faceProcessing: FaceProcessingService,
-) {}
+    private readonly prisma: PrismaClient,
+    private readonly storage: StorageService,
+    private readonly faceProcessing: FaceProcessingService,
+  ) { }
 
   async upload(
     request: UploadFilesRequest
@@ -44,10 +45,10 @@ export class UploadService {
       },
     });
 
-    const finalStatus = 
+    const finalStatus =
       updatedUpload.failedFiles === 0
-    ? UploadStatus.COMPLETED
-    : UploadStatus.FAILED;
+        ? UploadStatus.COMPLETED
+        : UploadStatus.FAILED;
 
 
     await this.updateStatus(upload.id, finalStatus);
@@ -80,42 +81,34 @@ export class UploadService {
     uploaderId: string,
     file: UploadFile
   ): Promise<void> {
-    const storageKey = generateObjectKey(
-      eventId,
-      file.filename
-    );
-
-    await this.storage.upload({
-      key: storageKey,
-      stream: createReadStream(file.path),
-      size: file.size,
-      contentType: file.contentType,
-    });
+    const storageKey = generateObjectKey(eventId, file.filename);
 
     try {
-      const photo = await this.createPhoto(
-        uploadId,
-        eventId,
-        uploaderId,
-        file,
-        storageKey
-      );
-      await this.faceProcessing.process(
-        photo.id,
-      );
-    } catch (error) {
+      await this.storage.upload({
+        key: storageKey,
+        stream: createReadStream(file.path),
+        size: file.size,
+        contentType: file.contentType,
+      });
+
       try {
-        await this.storage.delete(storageKey);
-      } catch (cleanupError) {
-        console.error(
-          "Failed to cleanup uploaded object:",
-          cleanupError
-        );
+        const photo = await this.createPhoto(uploadId, eventId, uploaderId, file, storageKey);
+        await this.faceProcessing.process(photo.id);
+      } catch (error) {
+        try {
+          await this.storage.delete(storageKey);
+        } catch (cleanupError) {
+          console.error("Failed to cleanup uploaded object:", cleanupError);
+        }
+        throw error;
       }
 
-      throw error;
+    } finally {
+      // Always delete the local temp file — success or failure
+      await fs.promises.unlink(file.path).catch(() => { });
     }
   }
+
 
   private async createPhoto(
     uploadId: string,

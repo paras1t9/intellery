@@ -22,7 +22,7 @@ export class FaceAligner {
   private calculateSimilarityTransform(
     source: Point[],
     target: Point[],
-    ): SimilarityTransform {
+  ): SimilarityTransform {
     if (source.length !== 5 || target.length !== 5) {
       throw new Error(
         "FaceAligner requires exactly 5 source and target landmarks."
@@ -108,7 +108,7 @@ export class FaceAligner {
     }
 
     const scale =
-    rotatedCorrelation / sourceVariance;
+      rotatedCorrelation / sourceVariance;
 
     const a = scale * cosTheta;
     const b = -scale * sinTheta;
@@ -123,7 +123,7 @@ export class FaceAligner {
     const f =
       targetCenterY -
       (d * sourceCenterX +
-      e * sourceCenterY);
+        e * sourceCenterY);
 
     return {
       a,
@@ -152,23 +152,12 @@ export class FaceAligner {
         ARC_FACE_TEMPLATE,
       );
 
-    console.log("Similarity transform:");
-    console.log(transform);
-
-    console.log("Transformed landmarks:");
-
     for (let i = 0; i < source.length; i++) {
       const transformed =
         this.applyTransform(
           source[i],
           transform,
         );
-
-      console.log({
-        source: source[i],
-        transformed,
-        target: ARC_FACE_TEMPLATE[i],
-      });
     }
 
     return transform;
@@ -279,8 +268,8 @@ export class FaceAligner {
 
     const output = Buffer.alloc(
       outputWidth *
-        outputHeight *
-        3
+      outputHeight *
+      3
     );
 
     /*
@@ -348,15 +337,15 @@ export class FaceAligner {
         for (let channel = 0; channel < 3; channel++) {
           const top =
             data[topLeft + channel] *
-              (1 - dx) +
+            (1 - dx) +
             data[topRight + channel] *
-              dx;
+            dx;
 
           const bottom =
             data[bottomLeft + channel] *
-              (1 - dx) +
+            (1 - dx) +
             data[bottomRight + channel] *
-              dx;
+            dx;
 
           const value =
             top * (1 - dy) +

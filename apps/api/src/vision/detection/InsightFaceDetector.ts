@@ -364,17 +364,9 @@ export class InsightFaceDetector implements FaceDetector {
       }
     }
 
-    console.log(
-      `Candidates before NMS: ${detections.length}`
-    );
-
     const finalDetections = this.applyNms(
       detections,
       0.4,
-    );
-
-    console.log(
-      `Detections after NMS: ${finalDetections.length}`
     );
 
     return finalDetections;

@@ -6,9 +6,8 @@ import { Prisma } from "../../generated/prisma/client.js";
 
 import prisma from "../infrastructure/prisma.js";
 import { AppError } from "../errors/AppError.js";
-import { CreateEventDto, JoinEventDto, UpdateEventDetailsDto,  } from "../schemas/event.schema.js";
+import { CreateEventDto, JoinEventDto, UpdateEventDetailsDto, } from "../schemas/event.schema.js";
 import { CreateEventResponse, JoinEventResponse, UserEventResponse, EventDetailsResponse, EventMemberResponse, UpdateMemberRoleDto } from "../dto/event/event.dto.js";
-import { id } from "zod/v4/locales";
 
 const ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const ALPHABET_LENGTH = ALPHABET.length;
@@ -26,19 +25,19 @@ export class EventService {
     ) {
       let code = "";
 
-    while (code.length < length) {
-      const bytes = randomBytes(length);
+      while (code.length < length) {
+        const bytes = randomBytes(length);
 
-      for (const byte of bytes) {
-        if (byte >= MAX_ACCEPTABLE_BYTE) continue;
+        for (const byte of bytes) {
+          if (byte >= MAX_ACCEPTABLE_BYTE) continue;
 
-        code += ALPHABET[byte % ALPHABET_LENGTH];
+          code += ALPHABET[byte % ALPHABET_LENGTH];
 
-        if (code.length === length) {
-          return code;
+          if (code.length === length) {
+            return code;
+          }
         }
       }
-    }
 
       const existingEvent = await prisma.event.findUnique({
         where: {
@@ -116,7 +115,7 @@ export class EventService {
     );
   }
 
-  async joinEvent(userId: string, dto: JoinEventDto): Promise<JoinEventResponse>{
+  async joinEvent(userId: string, dto: JoinEventDto): Promise<JoinEventResponse> {
     const event = await prisma.event.findUnique({
       where: {
         eventCode: dto.eventCode,
@@ -128,33 +127,33 @@ export class EventService {
         iconURL: true,
       },
     });
-    if(!event){
+    if (!event) {
       throw new AppError(StatusCodes.NOT_FOUND, "Event doesn't exist");
     }
-    try{
+    try {
       await prisma.eventMember.create({
-      data:{
-        userId,
-        eventId: event.eventId,
-        role: EventRole.VIEWER
-      }
+        data: {
+          userId,
+          eventId: event.eventId,
+          role: EventRole.VIEWER
+        }
       })
-        return {
+      return {
         eventId: event.eventId,
         name: event.name,
         eventCode: event.eventCode,
         iconURL: event.iconURL,
         role: EventRole.VIEWER,
-        }; 
-      }catch(error){
-        if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
+      };
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
       ) {
-      throw new AppError(
-        StatusCodes.CONFLICT,
-        "You are already a member of this event.",
-        false
+        throw new AppError(
+          StatusCodes.CONFLICT,
+          "You are already a member of this event.",
+          false
         );
       }
 
@@ -162,23 +161,23 @@ export class EventService {
     }
   }
 
-  async getUserEvents(userId: string): Promise <UserEventResponse[]>{
+  async getUserEvents(userId: string): Promise<UserEventResponse[]> {
     const rawEvents = await prisma.eventMember.findMany({
-      where:{
+      where: {
         userId
       },
-      select:{
-        role:true,
-        event:{
-          select:{
+      select: {
+        role: true,
+        event: {
+          select: {
             eventId: true,
             name: true,
             iconURL: true
           }
         }
       },
-      orderBy:{
-        event:{
+      orderBy: {
+        event: {
           createdAt: "desc"
         }
       }
@@ -192,16 +191,16 @@ export class EventService {
     return events;
   }
 
-  async deleteEvent(eventId: string, userId: string): Promise<void>{
+  async deleteEvent(eventId: string, userId: string): Promise<void> {
     const event = await prisma.event.findUnique({
-      where:{
+      where: {
         eventId
       },
-      select:{
+      select: {
         eventId: true
       }
     })
-    if(!event){
+    if (!event) {
       throw new AppError(StatusCodes.NOT_FOUND, "Event Does not exist")
     }
     const adminMembership = await prisma.eventMember.findFirst({
@@ -211,31 +210,31 @@ export class EventService {
         role: EventRole.ADMIN,
       },
     });
-    if(!adminMembership){
+    if (!adminMembership) {
       throw new AppError(StatusCodes.FORBIDDEN, "Not authorized to perform the function");
     }
-    try{
+    try {
       await prisma.event.delete({
-        where:{
+        where: {
           eventId
         }
       });
     }
     catch (error) {
-    if(
+      if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === "P2025"
-      ){
+      ) {
         throw new AppError(StatusCodes.NOT_FOUND, "Event not found");
-      } 
-    throw error;
+      }
+      throw error;
     }
     return
   }
-  
+
   async getEventDetails(
-  userId: string,
-  eventId: string
+    userId: string,
+    eventId: string
   ): Promise<EventDetailsResponse> {
     const rawEventDetails = await prisma.eventMember.findFirst({
       where: {
@@ -262,7 +261,7 @@ export class EventService {
     });
 
     if (!rawEventDetails) {
-      throw new AppError(StatusCodes.NOT_FOUND,"Event not found");
+      throw new AppError(StatusCodes.NOT_FOUND, "Event not found");
     }
 
     return {
@@ -276,14 +275,14 @@ export class EventService {
     };
   }
 
-  async updateEvent( userId: string,eventId: string,updateData: UpdateEventDetailsDto): Promise<EventDetailsResponse>{
+  async updateEvent(userId: string, eventId: string, updateData: UpdateEventDetailsDto): Promise<EventDetailsResponse> {
     const event = await prisma.event.findUnique({
-    where: {
-      eventId,
-    },
+      where: {
+        eventId,
+      },
     });
     if (!event) {
-      throw new AppError(StatusCodes.NOT_FOUND,"Event not found");
+      throw new AppError(StatusCodes.NOT_FOUND, "Event not found");
     }
     const adminMembership = await prisma.eventMember.findFirst({
       where: {
@@ -313,104 +312,104 @@ export class EventService {
     return this.getEventDetails(userId, eventId);
   }
 
-  async getEventMembers(userId: string, eventId: string): Promise<EventMemberResponse[]>{
+  async getEventMembers(userId: string, eventId: string): Promise<EventMemberResponse[]> {
     const isMember = await prisma.eventMember.findUnique({
-      where:{
-        userId_eventId:{
+      where: {
+        userId_eventId: {
           userId,
           eventId
         }
       },
-      select:{
+      select: {
         userId: true
       }
     });
-    if(!isMember){
+    if (!isMember) {
       throw new AppError(StatusCodes.NOT_FOUND, "Event not found");
     }
     const members = await prisma.eventMember.findMany({
-      where:{
+      where: {
         eventId
       },
-      select:{
+      select: {
         userId: true,
         role: true,
-        user:{
-          select:{
+        user: {
+          select: {
             displayName: true
           }
         }
       },
-      orderBy:[
+      orderBy: [
         {
           role: "asc"
         },
         {
-          user:{
+          user: {
             displayName: "asc"
           }
         }
       ]
     })
-    return members.map((member)=>({
+    return members.map((member) => ({
       userId: member.userId,
       displayName: member.user.displayName,
       role: member.role,
     }))
   }
 
-  async updateMemberRole(actorUserId: string, eventId: string, targetUserId :string, dto: UpdateMemberRoleDto): Promise<EventMemberResponse>{
+  async updateMemberRole(actorUserId: string, eventId: string, targetUserId: string, dto: UpdateMemberRoleDto): Promise<EventMemberResponse> {
     const targetRole = dto.role;
     const actorMembership = await prisma.eventMember.findUnique({
-      where:{
-        userId_eventId:{
+      where: {
+        userId_eventId: {
           userId: actorUserId,
           eventId
         }
-      },select:{
+      }, select: {
         role: true
       }
     })
-    if(!actorMembership){
+    if (!actorMembership) {
       throw new AppError(StatusCodes.NOT_FOUND, "Event Not found");
     }
-    if(actorMembership.role !== EventRole.ADMIN){
-      throw new AppError(StatusCodes.FORBIDDEN,"Action not allowed");
+    if (actorMembership.role !== EventRole.ADMIN) {
+      throw new AppError(StatusCodes.FORBIDDEN, "Action not allowed");
     }
 
     const targetMembership = await prisma.eventMember.findUnique({
-      where:{
-        userId_eventId:{
+      where: {
+        userId_eventId: {
           userId: targetUserId, eventId
         }
-      },select:{
+      }, select: {
         userId: true,
         role: true,
-        user:{
-          select:{
+        user: {
+          select: {
             displayName: true
           }
         }
       }
     })
-    if(!targetMembership){
+    if (!targetMembership) {
       throw new AppError(StatusCodes.NOT_FOUND, "Member Not found");
     }
-    if (targetMembership.role === targetRole){
+    if (targetMembership.role === targetRole) {
       return {
         userId: targetMembership.userId,
         displayName: targetMembership.user.displayName,
         role: targetMembership.role
       }
     }
-    if(targetMembership.role === EventRole.ADMIN){
+    if (targetMembership.role === EventRole.ADMIN) {
       const adminCount = await prisma.eventMember.count({
-        where:{
+        where: {
           eventId,
           role: EventRole.ADMIN
         }
       })
-      if(adminCount === 1){
+      if (adminCount === 1) {
         throw new AppError(StatusCodes.CONFLICT, "Event should have atleast one admin")
       }
     }
