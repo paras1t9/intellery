@@ -21,6 +21,7 @@ import { FaceRecognizer } from "../vision/recognition/FaceRecognizer.js";
 import { FaceVectorRepository } from "../vision/recognition/FaceVectorRepository.js";
 
 import { FaceProcessingService } from "../vision/FaceProcessingService.js";
+import { IdentityService } from "../vision/identity/IdentityService.js";
 
 //////////////////////
 const currentFile =
@@ -76,6 +77,12 @@ new FaceRecognizer(
 const faceVectorRepository =
 new FaceVectorRepository();
 
+const identityService =
+new IdentityService(
+  prisma,
+  faceVectorRepository,
+);
+
 export const faceProcessingService =
 new FaceProcessingService(
   prisma,
@@ -84,7 +91,8 @@ new FaceProcessingService(
   faceDetector,
   faceAligner,
   faceRecognizer,
-  faceVectorRepository
+  faceVectorRepository,
+  identityService
 );
 
 export const uploadService =

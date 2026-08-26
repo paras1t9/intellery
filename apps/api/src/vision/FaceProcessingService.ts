@@ -11,6 +11,8 @@ import { FaceAligner } from "./recognition/FaceAligner.js";
 import { FaceRecognizer } from "./recognition/FaceRecognizer.js";
 import { FaceVectorRepository } from "./recognition/FaceVectorRepository.js";
 
+import { IdentityService } from "./identity/IdentityService.js";
+
 
 export class FaceProcessingService {
   constructor(
@@ -21,6 +23,7 @@ export class FaceProcessingService {
     private readonly aligner: FaceAligner,
     private readonly recognizer: FaceRecognizer,
     private readonly vectorRepository: FaceVectorRepository,
+    private readonly identityService: IdentityService,
   ) {}
 
   async process(
@@ -173,6 +176,12 @@ export class FaceProcessingService {
 
         await this.vectorRepository.save(
           detectedFace.id,
+          Array.from(embedding),
+        );
+
+        await this.identityService.assignIdentity(
+          detectedFace.id,
+          photo.eventId,
           Array.from(embedding),
         );
       }
