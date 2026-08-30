@@ -22,6 +22,9 @@ import { FaceVectorRepository } from "../vision/recognition/FaceVectorRepository
 
 import { FaceProcessingService } from "../vision/FaceProcessingService.js";
 import { IdentityService } from "../vision/identity/IdentityService.js";
+import { UserFaceVectorRepository } from "../vision/recognition/UserFaceVectorRepository.js";
+
+import { SelfieProcessingService } from "../services/SelfieProcessingService.js";
 
 import { PhotoWorker } from "../infrastructure/queue/PhotoWorker.js";
 import { photoQueue } from "../infrastructure/queue/PhotoQueue.js";
@@ -105,6 +108,18 @@ export const uploadService =
     photoQueue,
   );
 
+const userFaceVectorRepository = new UserFaceVectorRepository();
+
+export const selfieProcessingService =
+  new SelfieProcessingService(
+    prisma,
+    storageService,
+    imageProcessor,
+    faceDetector,
+    faceAligner,
+    faceRecognizer,
+    userFaceVectorRepository,
+  );
 
 
 export const uploadController =
