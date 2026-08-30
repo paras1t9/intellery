@@ -6,6 +6,7 @@ allowBuilds:
   argon2: false
   electron: true
   esbuild: true
+  msgpackr-extract: false
   onnxruntime-node: true
   onnxruntime-node@file:apps/api/onnxruntime-node.tgz: true
   prisma: true

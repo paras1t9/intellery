@@ -5,14 +5,15 @@ import { UploadFilesRequest } from "../dto/upload/UploadFilesRequest.js";
 import { UploadFilesResponse } from "../dto/upload/UploadFilesResponse.js";
 import { UploadFile } from "../dto/upload/UploadFile.js";
 import { generateObjectKey } from "../utils/objectKey.js";
-import { FaceProcessingService } from "../vision/FaceProcessingService.js";
+import { Queue } from "bullmq";
+import { PhotoJobData } from "../infrastructure/queue/PhotoQueue.js";
 import fs from "node:fs";
 
 export class UploadService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly storage: StorageService,
-    private readonly faceProcessing: FaceProcessingService,
+    private readonly queue: Queue<PhotoJobData>,
   ) { }
 
   async upload(
@@ -93,7 +94,8 @@ export class UploadService {
 
       try {
         const photo = await this.createPhoto(uploadId, eventId, uploaderId, file, storageKey);
-        await this.faceProcessing.process(photo.id);
+        await this.queue.add(`process-${photo.id}`, { photoId: photo.id });
+
       } catch (error) {
         try {
           await this.storage.delete(storageKey);

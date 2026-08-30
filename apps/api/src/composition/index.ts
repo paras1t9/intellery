@@ -23,87 +23,93 @@ import { FaceVectorRepository } from "../vision/recognition/FaceVectorRepository
 import { FaceProcessingService } from "../vision/FaceProcessingService.js";
 import { IdentityService } from "../vision/identity/IdentityService.js";
 
+import { PhotoWorker } from "../infrastructure/queue/PhotoWorker.js";
+import { photoQueue } from "../infrastructure/queue/PhotoQueue.js";
+
 //////////////////////
 const currentFile =
-fileURLToPath(import.meta.url);
+  fileURLToPath(import.meta.url);
 
 const currentDirectory =
-path.dirname(currentFile);
+  path.dirname(currentFile);
 
 const apiRoot =
-path.resolve(
-  currentDirectory,
-  "../.."
-);
+  path.resolve(
+    currentDirectory,
+    "../.."
+  );
 
 //////////////////////
 
 export const storageService =
-new MinioStorageService(
-  minioClient,
-  storageConfig.bucket
-);
+  new MinioStorageService(
+    minioClient,
+    storageConfig.bucket
+  );
 
 
 const modelLoader =
-new ModelLoader();
+  new ModelLoader();
 
 const detectionSession =
-await modelLoader.load(
-  "./models/insightface/detection/scrfd_10g_bnkps.onnx"
-);
+  await modelLoader.load(
+    "./models/insightface/detection/scrfd_10g_bnkps.onnx"
+  );
 
 const recognitionSession =
-await modelLoader.load(
-  "./models/insightface/recognition/w600k_r50.onnx"
-);
+  await modelLoader.load(
+    "./models/insightface/recognition/w600k_r50.onnx"
+  );
 
 const imageProcessor =
-new ImageProcessor();
+  new ImageProcessor();
 
 const faceDetector =
-new InsightFaceDetector(
-  detectionSession
-);
+  new InsightFaceDetector(
+    detectionSession
+  );
 
 const faceAligner =
-new FaceAligner();
+  new FaceAligner();
 
 const faceRecognizer =
-new FaceRecognizer(
-  recognitionSession
-);
+  new FaceRecognizer(
+    recognitionSession
+  );
 
 const faceVectorRepository =
-new FaceVectorRepository();
+  new FaceVectorRepository();
 
 const identityService =
-new IdentityService(
-  prisma,
-  faceVectorRepository,
-);
+  new IdentityService(
+    prisma,
+    faceVectorRepository,
+  );
 
 export const faceProcessingService =
-new FaceProcessingService(
-  prisma,
-  storageService,
-  imageProcessor,
-  faceDetector,
-  faceAligner,
-  faceRecognizer,
-  faceVectorRepository,
-  identityService
-);
+  new FaceProcessingService(
+    prisma,
+    storageService,
+    imageProcessor,
+    faceDetector,
+    faceAligner,
+    faceRecognizer,
+    faceVectorRepository,
+    identityService
+  );
 
 export const uploadService =
-new UploadService(
-  prisma,
-  storageService,
-  faceProcessingService
-);
+  new UploadService(
+    prisma,
+    storageService,
+    photoQueue,
+  );
+
 
 
 export const uploadController =
-new UploadController(
-  uploadService
-);
+  new UploadController(
+    uploadService
+  );
+
+export const photoWorker = new PhotoWorker(faceProcessingService);

@@ -17,6 +17,6 @@ app.use("/auth", authRoutes);
 app.use("/events", eventRoutes);
 app.use("/", uploadRoutes);
 
-app.use(errorHandler)
+app.use(errorHandler);
 
 export default app;

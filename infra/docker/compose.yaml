@@ -54,6 +54,19 @@ services:
       exit 0;
       "
 
+  redis:
+    image: redis:7
+    container_name: intellery-redis
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis-data:/data
+
+    restart: unless-stopped    
+
 volumes:
   postgres-data:
   minio-data:
+  redis-data:
