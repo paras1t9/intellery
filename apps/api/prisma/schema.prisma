@@ -18,9 +18,12 @@ model User {
   email          String        @unique
   passwordHash   String
   profilePicture String?
+  selfieKey      String?       // MinIO key for registration selfie
   uploads        Upload[]
   photos         Photo[]
   memberships    EventMember[]
+  faceVector     UserFaceVector?
+  userIdentities UserIdentity[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 }
@@ -41,8 +44,9 @@ model Event {
   uploads   Upload[]
   photos    Photo[]
 
-  members    EventMember[]
-  identities Identity[]
+  members        EventMember[]
+  identities     Identity[]
+  userIdentities UserIdentity[]
 }
 
 model EventMember {
@@ -106,6 +110,10 @@ model Photo {
 
 enum EmbeddingModel {
   W600K_R50
+}
+
+enum SceneEmbeddingModel {
+  CLIP_VIT_B32
 }
 
 model DetectedFace {
@@ -203,11 +211,13 @@ model Upload {
 model PhotoAnnotation {
   id String @id @default(uuid())
 
-  photoId String @unique
-
-  caption String
+  photoId    String @unique
+  caption    String
+  vector     Unsupported("vector(512)")?
+  sceneModel SceneEmbeddingModel?
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
 
@@ -226,9 +236,39 @@ model Identity {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  event Event @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
-
-  faces DetectedFace[]
+  event          Event          @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  faces          DetectedFace[]
+  userIdentities UserIdentity[]
 
   @@index([eventId])
+}
+
+// Stores the ArcFace embedding extracted from the user's registration selfie.
+// Used to auto-match the user to their face cluster when they join an event.
+model UserFaceVector {
+  id     String         @id @default(uuid())
+  userId String         @unique
+  vector Unsupported("vector(512)")
+  model  EmbeddingModel
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Maps a user to their face identity cluster within a specific event.
+// This is what allows "me" to resolve to an identityId in search queries.
+model UserIdentity {
+  userId     String
+  eventId    String
+  identityId String
+
+  user     User     @relation(fields: [userId],     references: [id],      onDelete: Cascade)
+  event    Event    @relation(fields: [eventId],    references: [eventId], onDelete: Cascade)
+  identity Identity @relation(fields: [identityId], references: [id],      onDelete: Cascade)
+
+  @@id([userId, eventId])
+  @@index([eventId])
+  @@index([identityId])
 }
