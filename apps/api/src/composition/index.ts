@@ -30,6 +30,7 @@ import { TextEmbedder } from "../vision/scene/TextEmbedder.js";
 
 import { SelfieProcessingService } from "../services/SelfieProcessingService.js";
 import { UserIdentityResolver } from "../vision/identity/UserIdentityResolver.js";
+import { SearchService } from "../services/SearchService.js";
 
 import { PhotoWorker } from "../infrastructure/queue/PhotoWorker.js";
 import { photoQueue } from "../infrastructure/queue/PhotoQueue.js";
@@ -161,6 +162,13 @@ export const userIdentityResolver =
 export const uploadController =
   new UploadController(
     uploadService
+  );
+
+export const searchService =
+  new SearchService(
+    prisma,
+    storageService,
+    textEmbedder,
   );
 
 export const photoWorker = new PhotoWorker(photoProcessingService);
