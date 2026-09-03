@@ -4,6 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import eventService from "../services/event.service.js";
 import { CreateEventDto, JoinEventDto, DeleteEventDto, EventDetailsDto, UpdateEventDetailsDto} from "../schemas/event.schema.js";
 import { UpdateMemberRoleDto } from "../dto/event/event.dto.js";
+import { userIdentityResolver } from "../composition/index.js";
 
 export async function createEvent(req: Request, res: Response) {
   const userId = req.user.id;
@@ -17,14 +18,30 @@ export async function createEvent(req: Request, res: Response) {
   });
 }
 
-export async function joinEvent(req: Request, res: Response){
+export async function joinEvent(req: Request, res: Response) {
   const userId = req.user.id;
   const dto = req.body as JoinEventDto;
 
   const joinedEvent = await eventService.joinEvent(userId, dto);
+
+  /*
+   * Fire-and-forget: attempt to match the user's selfie to their
+   * face cluster in this event. We don't await the result here —
+   * the event may have no processed photos yet, and we never want
+   * identity resolution to block a successful join.
+   */
+  userIdentityResolver
+    .resolve(userId, joinedEvent.eventId)
+    .catch((err: unknown) =>
+      console.warn(
+        `[joinEvent] Identity resolution failed for user ${userId} in event ${joinedEvent.eventId}:`,
+        err instanceof Error ? err.message : err,
+      )
+    );
+
   return res.status(StatusCodes.OK).json({
     success: true,
-    data: joinedEvent
+    data: joinedEvent,
   });
 }
 
