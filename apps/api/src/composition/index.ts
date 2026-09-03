@@ -26,6 +26,7 @@ import { UserFaceVectorRepository } from "../vision/recognition/UserFaceVectorRe
 
 import { SceneEmbedder } from "../vision/scene/SceneEmbedder.js";
 import { SceneVectorRepository } from "../vision/scene/SceneVectorRepository.js";
+import { TextEmbedder } from "../vision/scene/TextEmbedder.js";
 
 import { SelfieProcessingService } from "../services/SelfieProcessingService.js";
 import { UserIdentityResolver } from "../vision/identity/UserIdentityResolver.js";
@@ -73,6 +74,11 @@ const clipVisionSession =
     "./models/clip/vision_model.onnx"
   );
 
+const clipTextSession =
+  await modelLoader.load(
+    "./models/clip/text_model.onnx"
+  );
+
 const imageProcessor =
   new ImageProcessor();
 
@@ -103,6 +109,13 @@ const sceneEmbedder =
 
 const sceneVectorRepository =
   new SceneVectorRepository();
+
+export const textEmbedder =
+  await TextEmbedder.create(
+    clipTextSession,
+    path.join(apiRoot, "models/clip/vocab.json"),
+    path.join(apiRoot, "models/clip/merges.txt"),
+  );
 
 export const photoProcessingService =
   new PhotoProcessingService(
