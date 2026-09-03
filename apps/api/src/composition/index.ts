@@ -20,9 +20,12 @@ import { FaceAligner } from "../vision/recognition/FaceAligner.js";
 import { FaceRecognizer } from "../vision/recognition/FaceRecognizer.js";
 import { FaceVectorRepository } from "../vision/recognition/FaceVectorRepository.js";
 
-import { FaceProcessingService } from "../vision/FaceProcessingService.js";
+import { PhotoProcessingService } from "../vision/PhotoProcessingService.js";
 import { IdentityService } from "../vision/identity/IdentityService.js";
 import { UserFaceVectorRepository } from "../vision/recognition/UserFaceVectorRepository.js";
+
+import { SceneEmbedder } from "../vision/scene/SceneEmbedder.js";
+import { SceneVectorRepository } from "../vision/scene/SceneVectorRepository.js";
 
 import { SelfieProcessingService } from "../services/SelfieProcessingService.js";
 import { UserIdentityResolver } from "../vision/identity/UserIdentityResolver.js";
@@ -65,6 +68,11 @@ const recognitionSession =
     "./models/insightface/recognition/w600k_r50.onnx"
   );
 
+const clipVisionSession =
+  await modelLoader.load(
+    "./models/clip/vision_model.onnx"
+  );
+
 const imageProcessor =
   new ImageProcessor();
 
@@ -90,8 +98,14 @@ const identityService =
     faceVectorRepository,
   );
 
-export const faceProcessingService =
-  new FaceProcessingService(
+const sceneEmbedder =
+  new SceneEmbedder(clipVisionSession);
+
+const sceneVectorRepository =
+  new SceneVectorRepository();
+
+export const photoProcessingService =
+  new PhotoProcessingService(
     prisma,
     storageService,
     imageProcessor,
@@ -99,7 +113,9 @@ export const faceProcessingService =
     faceAligner,
     faceRecognizer,
     faceVectorRepository,
-    identityService
+    identityService,
+    sceneEmbedder,
+    sceneVectorRepository,
   );
 
 export const uploadService =
@@ -134,4 +150,4 @@ export const uploadController =
     uploadService
   );
 
-export const photoWorker = new PhotoWorker(faceProcessingService);
+export const photoWorker = new PhotoWorker(photoProcessingService);

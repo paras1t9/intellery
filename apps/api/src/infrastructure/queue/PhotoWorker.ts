@@ -1,18 +1,18 @@
 import { Worker } from "bullmq";
 import { redisConfig } from "../../config/redis.js";
 import { PhotoJobData } from "./PhotoQueue.js";
-import { FaceProcessingService } from "../../vision/FaceProcessingService.js";
+import { PhotoProcessingService } from "../../vision/PhotoProcessingService.js";
 
 export class PhotoWorker {
   constructor(
-    private readonly faceProcessing: FaceProcessingService
+    private readonly photoProcessing: PhotoProcessingService
   ) {}
 
   start(): void {
     const worker = new Worker<PhotoJobData>(
       "photo-processing",
       async (job) => {
-        await this.faceProcessing.process(job.data.photoId);
+        await this.photoProcessing.process(job.data.photoId);
       },
       {
         connection: redisConfig,
