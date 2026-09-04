@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { photoService } from "../composition/index.js";
-import { PhotoGalleryParams, PhotoGalleryQuery } from "../schemas/photo.schema.js";
+import { PhotoGalleryParams, PhotoGalleryQuery } from "../schemas/photoSchema.js";
 
 export async function getGallery(req: Request, res: Response) {
   const userId   = req.user.id;

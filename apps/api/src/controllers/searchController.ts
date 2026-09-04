@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { searchService } from "../composition/index.js";
-import { SearchBody, SearchParams } from "../schemas/search.schema.js";
+import { SearchBody, SearchParams } from "../schemas/searchSchema.js";
 
 export async function search(req: Request, res: Response) {
   const userId  = req.user.id;

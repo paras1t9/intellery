@@ -1,7 +1,6 @@
 import { PrismaClient } from "../../generated/prisma/client.js";
 import { StorageService } from "../storage/StorageService.js";
-import { AppError } from "../errors/AppError.js";
-import { StatusCodes } from "http-status-codes";
+import { ForbiddenError, NotFoundError } from "../errors/index.js";
 
 export interface BoundingBox {
   x:      number;
@@ -35,7 +34,7 @@ export class IdentityManagementService {
       where: { userId, eventId },
     });
     if (!membership) {
-      throw new AppError(StatusCodes.FORBIDDEN, "You are not a member of this event.");
+      throw new ForbiddenError("You are not a member of this event.");
     }
   }
 
@@ -114,10 +113,7 @@ export class IdentityManagementService {
     });
 
     if (!existing) {
-      throw new AppError(
-        StatusCodes.NOT_FOUND,
-        "Identity not found in this event.",
-      );
+      throw new NotFoundError("Identity not found in this event.");
     }
 
     await this.prisma.identity.update({
@@ -132,7 +128,7 @@ export class IdentityManagementService {
     const updated = items.find((i) => i.identityId === identityId);
 
     if (!updated) {
-      throw new AppError(StatusCodes.INTERNAL_SERVER_ERROR, "Failed to retrieve updated identity.");
+      throw new Error("Failed to retrieve updated identity.");
     }
 
     return updated;

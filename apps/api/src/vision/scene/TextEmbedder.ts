@@ -4,43 +4,40 @@ import { ClipTokenizer } from "./ClipTokenizer.js";
 const CONTEXT_LENGTH = 77;
 
 export class TextEmbedder {
-  private readonly inputIdsName:      string;
-  private readonly attentionMaskName: string;
-  private readonly outputName:        string;
+  private readonly inputIdsName: string;
+  private readonly outputName:   string;
 
   private constructor(
     private readonly session:   InferenceSession,
     private readonly tokenizer: ClipTokenizer,
   ) {
     /*
-     * Discover tensor names from the session so we're not
-     * coupled to a specific ONNX export variant.
+     * Xenova's clip-vit-base-patch32 text_model.onnx has exactly:
+     *   input:  input_ids   (int64, [1, 77])
+     *   output: text_embeds (float32, [1, 512])
      *
-     * Xenova's clip-vit-base-patch32 text model has two inputs:
-     *   [0] input_ids
-     *   [1] attention_mask
+     * The attention_mask is fused into the model — no separate tensor.
      */
-    const inputIdsName      = session.inputNames[0];
-    const attentionMaskName = session.inputNames[1];
-    const outputName        = session.outputNames[0];
+    const inputIdsName = session.inputNames[0];
+    const outputName   = session.outputNames[0];
 
-    if (!inputIdsName || !attentionMaskName || !outputName) {
+    if (!inputIdsName || !outputName) {
       throw new Error(
-        "TextEmbedder: CLIP text model must have 2 inputs and 1 output tensor.",
+        "TextEmbedder: CLIP text model must have at least 1 input and 1 output tensor. " +
+        `Got inputs=[${session.inputNames}] outputs=[${session.outputNames}]`,
       );
     }
 
-    this.inputIdsName      = inputIdsName;
-    this.attentionMaskName = attentionMaskName;
-    this.outputName        = outputName;
+    this.inputIdsName = inputIdsName;
+    this.outputName   = outputName;
   }
 
   /**
    * Factory — loads the tokenizer files at startup, not per-request.
    */
   static async create(
-    session:   InferenceSession,
-    vocabPath: string,
+    session:    InferenceSession,
+    vocabPath:  string,
     mergesPath: string,
   ): Promise<TextEmbedder> {
     const tokenizer = await ClipTokenizer.create(vocabPath, mergesPath);
@@ -55,7 +52,7 @@ export class TextEmbedder {
    * gives a semantic relevance score.
    */
   async embed(text: string): Promise<Float32Array> {
-    const { inputIds, attentionMask } = this.tokenizer.encode(text);
+    const { inputIds } = this.tokenizer.encode(text);
 
     const inputIdsTensor = new Tensor(
       "int64",
@@ -63,15 +60,8 @@ export class TextEmbedder {
       [1, CONTEXT_LENGTH],
     );
 
-    const attentionMaskTensor = new Tensor(
-      "int64",
-      attentionMask,
-      [1, CONTEXT_LENGTH],
-    );
-
     const outputs = await this.session.run({
-      [this.inputIdsName]:      inputIdsTensor,
-      [this.attentionMaskName]: attentionMaskTensor,
+      [this.inputIdsName]: inputIdsTensor,
     });
 
     const output = outputs[this.outputName];
@@ -92,8 +82,8 @@ export class TextEmbedder {
 
     /*
      * The Xenova export outputs text_embeds which is already projected
-     * and L2-normalized into the shared CLIP embedding space — same as
-     * the vision model output. Direct cosine comparison is valid.
+     * into the shared CLIP embedding space — same dimension as image_embeds.
+     * Direct cosine comparison is valid.
      */
     return embedding;
   }

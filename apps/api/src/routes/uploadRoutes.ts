@@ -2,10 +2,10 @@ import { Router } from "express";
 
 import { uploadController } from "../composition/index.js";
 import { uploadMiddleware } from "../middleware/upload.js";
-import { validate } from "../middleware/validation.middleware.js";
+import { validate } from "../middleware/validationMiddleware.js";
 import { validateFiles } from "../middleware/validateFiles.js";
-import { eventIdSchema } from "../schemas/event.schema.js";
-import { authMiddleware } from "../middleware/auth.middleware.js";
+import { eventIdSchema } from "../schemas/eventSchema.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = Router();
 

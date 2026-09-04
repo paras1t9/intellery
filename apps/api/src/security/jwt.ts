@@ -1,14 +1,16 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { env } from "../config/env.js";
-import { AppError } from "../errors/AppError.js";
-import {StatusCodes} from "http-status-codes";
 
 export function generateToken(userId : string): string{
   
   const secret = env.JWT_SECRET;
 
   if (!secret) {
-    throw new AppError(StatusCodes.INTERNAL_SERVER_ERROR,"JWT_SECRET is not configured");
+    /*
+     * This is a server misconfiguration, not a client error.
+     * Throw a plain Error — it will surface as 500.
+     */
+    throw new Error("JWT_SECRET is not configured.");
   }
   const token = jwt.sign(
     {
@@ -23,12 +25,9 @@ export function generateToken(userId : string): string{
 }
 
 export function verifyToken(token: string): JwtPayload {
-  try {
-    return jwt.verify(token, env.JWT_SECRET) as JwtPayload;
-  } catch {
-    throw new AppError(
-      StatusCodes.UNAUTHORIZED,
-      "Invalid or expired token",
-    );
-  }
+  /*
+   * Let the original JsonWebTokenError / TokenExpiredError propagate.
+   * The error middleware maps these to 401 by checking err.name.
+   */
+  return jwt.verify(token, env.JWT_SECRET) as JwtPayload;
 }

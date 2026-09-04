@@ -1,11 +1,11 @@
 import express from "express";
 import cors from "cors";
 
-import healthRoutes from "./routes/health.routes.js";
-import authRoutes from "./routes/auth.routes.js";
-import eventRoutes from "./routes/event.routes.js";
-import uploadRoutes from "./routes/upload.routes.js";
-import { errorHandler } from "./middleware/error.middleware.js";
+import healthRoutes from "./routes/healthRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import eventRoutes from "./routes/eventRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
+import { errorHandler } from "./middleware/errorMiddleware.js";
 
 const app = express();
 

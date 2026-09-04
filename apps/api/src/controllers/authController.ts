@@ -1,18 +1,18 @@
 import { Request, Response } from "express";
-import { LoginUserInput, RegisterUserInput } from "../schemas/auth.schema.js";
-import { loginUser, registerUser } from "../services/auth.service.js";
+import { LoginUserInput, RegisterUserInput } from "../schemas/authSchema.js";
+import { loginUser, registerUser } from "../services/authService.js";
 import { selfieProcessingService } from "../composition/index.js";
 import { StatusCodes } from "http-status-codes";
-import { AppError } from "../errors/AppError.js";
+import { BadRequestError } from "../errors/index.js";
 import prisma from "../infrastructure/prisma.js";
 
 export async function register(req: Request, res: Response) {
   const selfieFile = req.file;
 
   if (!selfieFile) {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
+    throw new BadRequestError(
       "A selfie photo is required to register.",
+      "SELFIE_REQUIRED",
     );
   }
 

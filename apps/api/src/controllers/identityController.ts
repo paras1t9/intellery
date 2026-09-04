@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { identityManagementService } from "../composition/index.js";
-import { IdentityParams, NameIdentityDto } from "../schemas/identity.schema.js";
+import { IdentityParams, NameIdentityDto } from "../schemas/identitySchema.js";
 
 export async function listIdentities(req: Request, res: Response) {
   const userId      = req.user.id;

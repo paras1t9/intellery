@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { BadRequestError } from "../errors/index.js";
 
 interface FileValidationOptions {
   minFiles?: number;
@@ -13,11 +14,21 @@ export function validateFiles({
     const files = req.files as Express.Multer.File[] | undefined;
 
     if (!files || files.length < minFiles) {
-      return next(new Error(`At least ${minFiles} file(s) must be uploaded.`));
+      return next(
+        new BadRequestError(
+          `At least ${minFiles} file(s) must be uploaded.`,
+          "MISSING_FILES",
+        ),
+      );
     }
 
     if (files.length > maxFiles) {
-      return next(new Error(`A maximum of ${maxFiles} files can be uploaded.`));
+      return next(
+        new BadRequestError(
+          `A maximum of ${maxFiles} file(s) can be uploaded at once.`,
+          "TOO_MANY_FILES",
+        ),
+      );
     }
 
     next();

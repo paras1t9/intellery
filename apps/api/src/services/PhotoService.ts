@@ -1,7 +1,6 @@
 import { PrismaClient, PhotoProcessingStatus } from "../../generated/prisma/client.js";
 import { StorageService } from "../storage/StorageService.js";
-import { AppError } from "../errors/AppError.js";
-import { StatusCodes } from "http-status-codes";
+import { ForbiddenError } from "../errors/index.js";
 
 export interface PhotoItem {
   photoId:          string;
@@ -32,7 +31,7 @@ export class PhotoService {
       where: { userId, eventId },
     });
     if (!membership) {
-      throw new AppError(StatusCodes.FORBIDDEN, "You are not a member of this event.");
+      throw new ForbiddenError("You are not a member of this event.");
     }
   }
 

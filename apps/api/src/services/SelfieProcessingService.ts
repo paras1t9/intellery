@@ -5,7 +5,7 @@ import { PrismaClient } from "../../generated/prisma/client.js";
 import { StatusCodes } from "http-status-codes";
 
 import { StorageService } from "../storage/StorageService.js";
-import { AppError } from "../errors/AppError.js";
+import { FaceNotDetectedError, MultipleFacesError } from "../errors/index.js";
 
 import { ImageProcessor } from "../vision/common/ImageProcessor.js";
 import { SCRFD_CONFIG } from "../vision/common/configs.js";
@@ -47,17 +47,11 @@ export class SelfieProcessingService {
       );
 
       if (detections.length === 0) {
-        throw new AppError(
-          StatusCodes.BAD_REQUEST,
-          "No face detected in selfie. Please take a clearer photo.",
-        );
+        throw new FaceNotDetectedError();
       }
 
       if (detections.length > 1) {
-        throw new AppError(
-          StatusCodes.BAD_REQUEST,
-          "Multiple faces detected in selfie. Please take a photo with only your face.",
-        );
+        throw new MultipleFacesError();
       }
 
       /*

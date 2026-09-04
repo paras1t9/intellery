@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
-import eventService from "../services/event.service.js";
-import { CreateEventDto, JoinEventDto, DeleteEventDto, EventDetailsDto, UpdateEventDetailsDto} from "../schemas/event.schema.js";
-import { UpdateMemberRoleDto } from "../dto/event/event.dto.js";
+import eventService from "../services/eventService.js";
+import { CreateEventDto, JoinEventDto, DeleteEventDto, EventDetailsDto, UpdateEventDetailsDto} from "../schemas/eventSchema.js";
+import { UpdateMemberRoleDto } from "../dto/event/eventDto.js";
 import { userIdentityResolver } from "../composition/index.js";
 
 export async function createEvent(req: Request, res: Response) {
