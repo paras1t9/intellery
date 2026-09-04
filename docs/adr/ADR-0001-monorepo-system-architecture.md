@@ -281,8 +281,8 @@ Expected future additions include:
 
 # References
 
-Future ADRs:
+Related Architecture Decision Records:
 
-- ADR-0002 — Domain Model
-- ADR-0003 — Photo Upload Pipeline
-- ADR-0004 — AI Processing Pipeline
+- [ADR-0002 — Relational Domain Model and pgvector Persistence](file:///home/ayush/Projects/intellery/docs/adr/ADR-0002-domain-model.md)
+- [ADR-0003 — Asynchronous Photo Ingestion Pipeline](file:///home/ayush/Projects/intellery/docs/adr/ADR-0003-photo-upload-pipeline.md)
+- [ADR-0004 — In-Process ONNX Runtime AI Pipeline](file:///home/ayush/Projects/intellery/docs/adr/ADR-0004-in-process-onnx-ai-pipeline.md)
