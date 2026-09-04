@@ -43,34 +43,68 @@ export class SearchService {
     const vector = `[${Array.from(embedding).join(",")}]`;
 
     /*
-     * 2. Detect "me" in the query.
-     *    If present, look up the user's face identity in this event.
-     *    The UserIdentityResolver writes this record when the user joins.
+     * 2. Collect all identity IDs that should filter the results.
+     *
+     *    a) "me" keyword → resolve via UserIdentity
+     *    b) Any word matching a confirmed Identity.displayName → resolve via Identity table
+     *
+     *    Photos returned must contain at least one face from
+     *    any of the resolved identities (OR logic).
      */
-    let identityId: string | null = null;
+    const resolvedIdentityIds: string[] = [];
+    let meResolved = false;
+
     const hasMeKeyword = ME_PATTERN.test(query);
 
     if (hasMeKeyword) {
       const userIdentity = await this.prisma.userIdentity.findUnique({
-        where: {
-          userId_eventId: { userId, eventId },
-        },
+        where: { userId_eventId: { userId, eventId } },
         select: { identityId: true },
       });
-      identityId = userIdentity?.identityId ?? null;
+      if (userIdentity) {
+        resolvedIdentityIds.push(userIdentity.identityId);
+        meResolved = true;
+      }
     }
 
     /*
-     * 3. Search PhotoAnnotation vectors using pgvector cosine distance (<=>) .
+     * Tokenize query into individual words and check each against
+     * confirmed Identity display names in this event.
+     */
+    const words = query.toLowerCase().match(/[a-z]+/g) ?? [];
+
+    if (words.length > 0) {
+      const namedIdentities = await this.prisma.identity.findMany({
+        where: {
+          eventId,
+          isConfirmed: true,
+          displayName: { in: words, mode: "insensitive" },
+        },
+        select: { id: true },
+      });
+      for (const ni of namedIdentities) {
+        if (!resolvedIdentityIds.includes(ni.id)) {
+          resolvedIdentityIds.push(ni.id);
+        }
+      }
+    }
+
+    /*
+     * 3. Build pgvector query.
      *
-     *    Two variants:
-     *    - With "me" resolved: filter to photos containing the user's face.
-     *    - Without "me": pure semantic scene search across the whole event.
+     *    - If identity IDs were resolved: scene similarity + identity filter
+     *      (photos must contain at least one of the resolved people).
+     *    - Otherwise: pure scene similarity search across the whole event.
      */
     type RawRow = { photoId: string; storageKey: string; similarity: number };
     let rows: RawRow[];
 
-    if (hasMeKeyword && identityId) {
+    if (resolvedIdentityIds.length > 0) {
+      /*
+       * Prisma raw query with pgvector — identity list is serialised as a
+       * Postgres text[] and matched with = ANY().
+       */
+      const idList = resolvedIdentityIds.join(",");
       rows = await this.prisma.$queryRaw<RawRow[]>`
         SELECT
           pa."photoId",
@@ -83,7 +117,9 @@ export class SearchService {
           AND EXISTS (
             SELECT 1 FROM "DetectedFace" df
             WHERE df."photoId" = p."id"
-              AND df."identityId" = ${identityId}
+              AND df."identityId" = ANY(
+                SELECT unnest(string_to_array(${idList}, ','))
+              )
           )
         ORDER BY pa."vector" <=> ${vector}::vector
         LIMIT ${limit}
@@ -104,8 +140,7 @@ export class SearchService {
     }
 
     /*
-     * 4. Filter by minimum similarity, then generate presigned URLs
-     *    for all results concurrently.
+     * 4. Filter by minimum similarity, generate presigned URLs concurrently.
      */
     const relevant = rows.filter(
       (row) => Number(row.similarity) >= SIMILARITY_THRESHOLD,
@@ -113,23 +148,16 @@ export class SearchService {
 
     const results = await Promise.all(
       relevant.map(async (row) => ({
-        photoId: row.photoId,
-        url: await this.storage.getSignedUrl(row.storageKey, {
-          expiresInSeconds: 60 * 60, // 1 hour
-        }),
+        photoId:    row.photoId,
+        url:        await this.storage.getSignedUrl(row.storageKey, { expiresInSeconds: 3600 }),
         similarity: Number(row.similarity),
       })),
     );
 
     return {
       results,
-      /*
-       * meResolved = true means "me" was found AND we know which face
-       * cluster belongs to this user in this event.
-       * meResolved = false means either "me" wasn't in the query,
-       * or we couldn't match the user to a face cluster yet.
-       */
-      meResolved: hasMeKeyword && identityId !== null,
+      meResolved,
     };
   }
+
 }

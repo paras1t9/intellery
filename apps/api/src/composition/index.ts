@@ -31,6 +31,8 @@ import { TextEmbedder } from "../vision/scene/TextEmbedder.js";
 import { SelfieProcessingService } from "../services/SelfieProcessingService.js";
 import { UserIdentityResolver } from "../vision/identity/UserIdentityResolver.js";
 import { SearchService } from "../services/SearchService.js";
+import { PhotoService } from "../services/PhotoService.js";
+import { IdentityManagementService } from "../services/IdentityManagementService.js";
 
 import { PhotoWorker } from "../infrastructure/queue/PhotoWorker.js";
 import { photoQueue } from "../infrastructure/queue/PhotoQueue.js";
@@ -169,6 +171,18 @@ export const searchService =
     prisma,
     storageService,
     textEmbedder,
+  );
+
+export const photoService =
+  new PhotoService(
+    prisma,
+    storageService,
+  );
+
+export const identityManagementService =
+  new IdentityManagementService(
+    prisma,
+    storageService,
   );
 
 export const photoWorker = new PhotoWorker(photoProcessingService);
